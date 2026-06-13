@@ -9,7 +9,7 @@ st.subheader("Transações")
 
 st.dataframe(df)
 
-st.subheader("Resumo")
+st.subheader("Detalhes")
 
 st.write("Quantidade de transações:", len(df))
 
