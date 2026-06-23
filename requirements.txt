@@ -1,0 +1,17 @@
+streamlit
+streamlit-agraph
+requests
+networkx
+pandas
+numpy
+plotly
+matplotlib
+python-dotenv
+langchain-google-genai
+langchain-core
+langchain-community
+langchain-huggingface
+sentence-transformers
+faiss-cpu
+torch
+torchvision
