@@ -1,6 +1,6 @@
 #  Sistema de Rastreamento de Ransomware e Análise Forense em Blockchain
 
-Este projeto é uma plataforma de análise forense projetada para rastrear o fluxo de fundos ilícitos, como os provenientes de ataques de ransomware, na blockchain do Bitcoin. A ferramenta combina análise de grafos, um pipeline de heurísticas de simplificação e um assistente de investigação baseado em Inteligência Artificial (LLM) para transformar dados brutos de transações em insights acionáveis e narrativas dedutivas.
+Este projeto é uma plataforma de análise forense projetada para rastrear o fluxo de fundos ilícitos, como os provenientes de ataques de ransomware, na blockchain do Bitcoin. A ferramenta combina análise de grafos, um pipeline de heurísticas de simplificação e um assistente de investigação baseado em Inteligência Artificial (LLM) para transformar dados brutos de transações em insights e narrativas dedutivas.
 
 ##  Funcionalidades Principais
 
