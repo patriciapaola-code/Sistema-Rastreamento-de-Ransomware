@@ -257,14 +257,16 @@ def interface():
                 key="wallet_input"
             )
         with col_wallet_2:
-            if st.button("📋 Exemplo", help="Usar carteira de exemplo"):
-                exemplo = "bc1qjuqyesxjgravlf0evtz5p8ks8k2w6ytcherrk3"
-                st.session_state.wallet_example = exemplo
-                # Preenche o campo de input com o exemplo e força rerun para atualizar a UI
-                st.session_state["wallet_input"] = exemplo
-                st.experimental_rerun()
-        
-        wallet = st.session_state.get("wallet_input", wallet_input)
+           # Inicializa o estado uma única vez
+        if "wallet_input" not in st.session_state:
+            st.session_state.wallet_input = ""
+
+        if st.button("📋 Exemplo", help="Usar carteira de exemplo"):
+            exemplo = "bc1qjuqyesxjgravlf0evtz5p8ks8k2w6ytcherrk3"
+            st.session_state.wallet_input = exemplo
+            st.session_state.wallet_example = exemplo
+
+        wallet = st.session_state.wallet_input
         
         # Mostrar exemplo se selecionado
         if "wallet_example" in st.session_state:
