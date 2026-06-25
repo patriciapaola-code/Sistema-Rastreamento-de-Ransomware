@@ -17,8 +17,39 @@ import os
 st.set_page_config(
     layout="wide", 
     page_title="Sistema Antiransomware - Forense Blockchain", 
-    page_icon="🕵️‍♂️"
+    page_icon="🕵️‍♂️",
+    initial_sidebar_state="expanded"
 )
+
+# CSS Customizado para melhorar ícones e layout
+st.markdown("""
+<style>
+    /* Modo paisagem - maximizar espaço */
+    .main { padding-top: 1rem; }
+    .st-emotion-cache-z5fcl4 { padding: 0; }
+    
+    /* Melhorar aparência dos ícones */
+    h1, h2, h3, h4, h5 {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Cards de status - layout melhorado */
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        color: white;
+        font-weight: bold;
+    }
+    
+    /* Tabs - melhor estilo */
+    .st-tabs [role="tablist"] button[role="tab"] {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+</style>
+""", unsafe_allow_html=True)
 # ==============================================================================
 # 2. FUNÇÃO COM CACHE PARA PROCESSAMENTO PESADO DA BLOCKCHAIN
 # ==============================================================================
@@ -31,7 +62,7 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # 1. GRAFO BRUTO
     # =========================
     G_bruto = cb.expandirGrafo(wallet, profundidade=profundidade, 
-                                  max_vizinhos=max_vizinhos, max_nos=max_nos, max_edges=max_nos+100)
+                                  max_vizinhos=max_vizinhos, max_nos=max_nos, max_edges=600)
     score_bruto = ht.calcularScoreRisco(G_bruto, wallet)
     historico.append({
         "nome": "1. Grafo Bruto",
@@ -252,7 +283,7 @@ def interface():
         with col3:
             max_nos = st.slider(
                 "Número máximo de nós:",
-                min_value=50, max_value=2000, value=500, step=50,
+                min_value=50, max_value=500, value=500, step=50,
                 help="Limite total de nós no grafo"
             )
         
