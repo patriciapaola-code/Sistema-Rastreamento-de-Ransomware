@@ -651,7 +651,7 @@ def interface():
             Isso ocorre devido a restrições técnicas na indexação de carteiras (como endereços P2SH complexos) 
             ou falta de histórico ativo na rede.
             """)
-        return # Encerra a renderização desta aba graciosamente
+        # Encerra a renderização desta aba graciosamente
     
         # Restante do código segue normalmente apenas se historico existir
         index = st.session_state.get("grafo_index", 0)
