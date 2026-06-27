@@ -642,23 +642,30 @@ def interface():
     # =========================
     with tab_grafos:
 
-        historico = st.session_state.get("historico", [])
-        if not isinstance(historico, list):
-            historico = []
-            st.session_state.historico = historico
-
         if not historico:
-            st.info("Ainda não há histórico para exibir.")
-            st.stop()
+             st.warning("### 🔍 Investigação Inconclusiva")
+             st.markdown("""
+             Não foi possível obter dados transacionais suficientes para este endereço. Isso ocorre geralmente por um dos seguintes motivos:
+             * **Tipo de Endereço:** Endereços P2SH (Multi-Sig) complexos podem não ser totalmente indexados por APIs de consulta rápida.
+             * **Inatividade:** A carteira não possui transações registradas no histórico recente rastreável.
+             * **Privacidade:** A carteira utiliza protocolos de ocultação de identidade que impedem a vinculação inicial do grafo.
+    
+             **Sugestão:** Tente um endereço de entrada (Input) conhecido ou uma carteira com histórico de transações confirmadas.
+             """)
+             return
 
-        index = st.session_state.get("grafo_index", 0)
-        if not isinstance(index, int):
-            index = 0
 
-        index = max(0, min(index, len(historico) - 1))
-        st.session_state.grafo_index = index
 
-        etapa = historico[index]
+       #istorico = st.session_state.get("historico", [])
+       #if not historico:
+           #st.info("Ainda não há histórico para exibir.")
+           #st.stop()
+
+       #index = st.session_state.get("grafo_index", 0)
+       #index = max(0, min(index, len(historico) - 1))
+       #st.session_state.grafo_index = index
+
+      # etapa = historico[index]
 
         # =========================
         # MÉTRICAS DE REDUÇÃO (ADICIONE AQUI)
