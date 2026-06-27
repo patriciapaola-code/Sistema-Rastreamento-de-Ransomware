@@ -62,7 +62,6 @@ def is_grafo_valido(G): # Verifica se o grafo é válido (não nulo e com nós)
 @st.cache_resource(show_spinner=False)
 def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos=500,
                                sensibilidade="Médio", comportamentos=None):
-
     historico = []
     
    
@@ -93,8 +92,12 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
 
     # Agora o cálculo é seguro
     score_bruto = ht.calcularScoreRisco(G_bruto, wallet)
-    historico.append({...})
-    
+    historico.append({
+        "nome": "1. Grafo Bruto",
+        "grafo": G_bruto,
+        "scores": score_bruto,
+        "trajetorias": []
+    })
 
     
     # =========================
