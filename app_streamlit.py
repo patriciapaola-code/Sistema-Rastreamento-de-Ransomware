@@ -243,7 +243,11 @@ def carregar_agent():
 
 @st.cache_data(show_spinner=False)
 def cached_retrieve(_retriever, query):
-    return _retriever.invoke(query)
+    try:
+        return _retriever.invoke(query)
+    except Exception as e:
+        # Se a IA falhar, não quebra o sistema; retorna uma mensagem amigável
+        return "Erro ao consultar assistente: verifique a conexão com a API."
 
 # ==============================================================================
 # 3. INTERFACE DO USUÁRIO E CONTROLE DE EXIBIÇÃO (STREAMLIT UI)
