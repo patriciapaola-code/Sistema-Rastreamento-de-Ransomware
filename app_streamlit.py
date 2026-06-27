@@ -56,19 +56,44 @@ st.markdown("""
 def is_grafo_valido(G): # Verifica se o grafo é válido (não nulo e com nós)
     return G is not None and G.number_of_nodes() > 0
 
+    # ==============================================================================
+# 2. FUNÇÃO COM CACHE (CORRIGIDA)
+# ==============================================================================
 @st.cache_resource(show_spinner=False)
 def carregar_toda_a_blockchain(wallet, ...):
     historico = []
     
-    # 1. GRAFO BRUTO (Ponto de falha crítico)
-    G_bruto = cb.expandirGrafo(wallet, ...)
-    
+   
+    # =========================
+    # 1. GRAFO BRUTO (Ponto de falha crítico) eliminar a divisão por zero em caso de grafo vazio
+    # =========================
+    G_bruto = cb.expandirGrafo(wallet, profundidade=profundidade, 
+                                max_vizinhos=max_vizinhos, max_nos=max_nos, max_edges=600)
+
+    # --- INSERIR AQUI: LOGO ABAIXO DA LINHA DO G_bruto ---
+    # Verifica se o grafo existe e se ele tem pelo menos um nó
+    if G_bruto is None or (hasattr(G_bruto, 'number_of_nodes') and G_bruto.number_of_nodes() == 0):
+        # Isso impede que o código continue e tente calcular scores em um grafo vazio
+        return [], {"error": "Nenhum histórico encontrado para esta carteira."}
+    # ----------------------------------------------------
+
+    # Agora sim, você pode usar o G_bruto com segurança
+    score_bruto = ht.calcularScoreRisco(G_bruto, wallet)
+    historico.append({
+        "nome": "1. Grafo Bruto",
+        "grafo": G_bruto,
+        "scores": score_bruto,
+        "trajetorias": []
+    })
+
     if not is_grafo_valido(G_bruto):
         return [], {"error": "Nenhum dado transacional encontrado para esta carteira."}
 
     # Agora o cálculo é seguro
     score_bruto = ht.calcularScoreRisco(G_bruto, wallet)
     historico.append({...})
+    
+
     
     # =========================
     # FLUXO SEGURO PARA AS PRÓXIMAS ETAPAS
