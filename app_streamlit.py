@@ -99,7 +99,6 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
         "trajetorias": []
     })
 
-    
     # =========================
     # FLUXO SEGURO PARA AS PRÓXIMAS ETAPAS
     # =========================
@@ -643,8 +642,18 @@ def interface():
     # =========================
     with tab_grafos:
 
-        historico = st.session_state.historico
-        index = st.session_state.grafo_index
+        historico = st.session_state.get("historico", [])
+        if not isinstance(historico, list):
+            historico = []
+            st.session_state.historico = historico
+
+        if not historico:
+            st.info("Ainda não há histórico para exibir.")
+            st.stop()
+
+        index = st.session_state.get("grafo_index", 0)
+        if not isinstance(index, int):
+            index = 0
 
         index = max(0, min(index, len(historico) - 1))
         st.session_state.grafo_index = index
