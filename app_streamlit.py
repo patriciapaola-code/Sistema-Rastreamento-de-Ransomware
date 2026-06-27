@@ -60,7 +60,9 @@ def is_grafo_valido(G): # Verifica se o grafo é válido (não nulo e com nós)
 # 2. FUNÇÃO COM CACHE (CORRIGIDA)
 # ==============================================================================
 @st.cache_resource(show_spinner=False)
-def carregar_toda_a_blockchain(wallet, ...):
+def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos=500,
+                               sensibilidade="Médio", comportamentos=None):
+
     historico = []
     
    
