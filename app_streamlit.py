@@ -656,9 +656,9 @@ def interface():
         # Restante do código segue normalmente apenas se historico existir
         index = st.session_state.get("grafo_index", 0)
         index = max(0, min(index, len(historico) - 1))
-        st.session_state.grafo_index = index
+        st.session_state.grafo_index = index_seguro
 
-        etapa = historico[index]
+        etapa = historico[index_seguro]
 
 
         # =========================
