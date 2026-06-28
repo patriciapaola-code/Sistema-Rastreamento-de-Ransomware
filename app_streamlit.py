@@ -660,7 +660,7 @@ def interface():
 
         etapa = historico[index_seguro]"""
 
-        with tab_grafos:
+    with tab_grafos:
         historico = st.session_state.get("historico", [])
         
         # 1. Verifica se a lista existe antes de qualquer coisa
