@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import networkx as nx
 import pandas as pd
 import os
+import dashboard_dossie as dd
 
 # ==============================================================================
 # 1. CONFIGURAÇÃO DE PÁGINA DO STREAMLIT (OBRIGATORIAMENTE O PRIMEIRO COMANDO)
@@ -592,8 +593,9 @@ def interface():
     # =========================
     # TABS
     # =========================
-    tab_grafos, tab_chat = st.tabs([
+    tab_grafos, tab_dossie, tab_chat = st.tabs([
         "📊 Fluxo de Grafos",
+        "📄 Dossiê Investigativo",
         "🔎 Assistente IA Forense"
     ])
 
@@ -759,6 +761,9 @@ def interface():
                     st.rerun()
 
         st.subheader(etapa["nome"])
+
+    with tab_dossie:
+        dd.render_dashboard_dossie()
 
         # =========================
         # MÉTRICAS ESPECÍFICAS DA ETAPA
