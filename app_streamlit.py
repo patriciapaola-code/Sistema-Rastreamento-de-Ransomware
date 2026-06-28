@@ -312,7 +312,8 @@ def interface():
             if st.button("📋 Exemplo", help="Usar carteira de exemplo"):
                 exemplo = "bc1qjuqyesxjgravlf0evtz5p8ks8k2w6ytcherrk3"
                 # Atualiza o session_state e força rerun para refletir no input
-                st.session_state.update({"wallet_input": exemplo, "wallet_example": exemplo})
+                st.session_state.wallet_input = exemplo
+                st.session_state.wallet_example = exemplo
                 st.experimental_rerun()
 
         wallet = st.session_state.get("wallet_input", wallet_input)
