@@ -5,7 +5,6 @@ import analise_heuristica as ht
 import assistente_ia as ag
 import gerador_dossie as ds
 import visualizacao_grafo_interativo as dg
-import visualizacao_grafo_matplotlib as vgm
 import plotly.graph_objects as go
 import networkx as nx
 import pandas as pd
@@ -78,15 +77,6 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
         # Isso impede que o código continue e tente calcular scores em um grafo vazio
         return [], {"error": "Nenhum histórico encontrado para esta carteira."}
     # ----------------------------------------------------
-
-    # Agora sim, você pode usar o G_bruto com segurança
-    score_bruto = ht.calcularScoreRisco(G_bruto, wallet)
-    historico.append({
-        "nome": "1. Grafo Bruto",
-        "grafo": G_bruto,
-        "scores": score_bruto,
-        "trajetorias": []
-    })
 
     if not is_grafo_valido(G_bruto):
         return [], {"error": "Nenhum dado transacional encontrado para esta carteira."}
@@ -672,23 +662,132 @@ def interface():
         etapa = historico[index]
         
         # --- A partir daqui, você pode continuar renderizando o seu Grafo ---
-        st.write(f"Visualizando: {etapa['nome']}")
-        # (seu código de exibição do grafo aqui)
+        # =========================
+        # NAVEGAÇÃO NO TOPO (evita scroll para trocar de etapa)
+        # =========================
+        col_nav1, col_nav_label, col_nav2 = st.columns([1, 5, 1])
+        with col_nav1:
+            if st.button("⬅️ Anterior", key="prev", disabled=(index == 0)):
+                st.session_state.mostrar_nomes = True
+                st.session_state.mostrar_valores = True
+                st.session_state.grafo_index -= 1
+                st.rerun()
+        with col_nav_label:
+            st.markdown(
+                f"<h3 style='text-align:center; margin:0; padding:4px 0;'>{etapa['nome']}</h3>",
+                unsafe_allow_html=True
+            )
+        with col_nav2:
+            if st.button("Próxima ➡️", key="next", disabled=(index == len(historico) - 1)):
+                st.session_state.mostrar_nomes = True
+                st.session_state.mostrar_valores = True
+                st.session_state.grafo_index += 1
+                st.rerun()
 
         # =========================
-        # MÉTRICAS DE REDUÇÃO (ADICIONE AQUI)
+        # MÉTRICAS ESPECÍFICAS DA ETAPA (acima do grafo)
         # =========================
-        with st.expander("📊 Métricas de Redução do Grafo", expanded=True):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Nós", etapa['grafo'].number_of_nodes())
+        with col2:
+            st.metric("Arestas", etapa['grafo'].number_of_edges())
+        with col3:
+            st.metric("Carteiras Alto Risco",
+                      len([s for s in etapa['scores'].values() if s['risco'] == 'ALTO']))
+        with col4:
+            trajetorias = etapa.get('trajetorias', [])
+            if trajetorias:
+                st.metric("Tamanho da Rota Principal", len(trajetorias[0].get('caminho', [])))
+            else:
+                st.metric("Tamanho da Rota Principal", "N/A")
+
+        # =========================
+        # OPÇÕES DE VISUALIZAÇÃO (antes do grafo)
+        # =========================
+        col_opt1, col_opt2 = st.columns(2)
+        with col_opt1:
+            st.session_state.mostrar_nomes = st.checkbox(
+                "Exibir nomes das carteiras",
+                value=st.session_state.mostrar_nomes,
+                key="mostrar_nomes_cb"
+            )
+        with col_opt2:
+            st.session_state.mostrar_valores = st.checkbox(
+                "Exibir valores das transações",
+                value=st.session_state.mostrar_valores,
+                key="mostrar_valores_cb"
+            )
+
+        # =========================
+        # GRAFO INTERATIVO + LEGENDA LATERAL (renderizado uma única vez)
+        # =========================
+        col_grafo, col_legenda = st.columns([5, 1])
+
+        with col_grafo:
+            dg.renderizar_grafo_interativo(
+                G=etapa["grafo"],
+                carteira_principal=st.session_state.get("wallet_ativo", "desconhecida"),
+                scores=etapa["scores"],
+                trajetorias_destacadas=etapa.get("trajetorias"),
+                possiveis_mixers=etapa.get("possiveis_mixers"),
+                carteiras_alto_risco=etapa.get("carteiras_alto_risco"),
+                mostrar_nomes_carteiras=st.session_state.mostrar_nomes,
+                mostrar_valores_transacoes=st.session_state.mostrar_valores
+            )
+
+        with col_legenda:
+            st.markdown("**Legenda**")
+            st.divider()
+            if etapa["nome"] == "7. Grafo Final (Consolidado)":
+                st.markdown(
+                    "<span style='color:#006400; font-weight:bold;'>■</span> Carteira Inicial<br>"
+                    "<span style='color:#8400FF; font-weight:bold;'>■</span> Possível Mixer<br>"
+                    "<span style='color:#800000; font-weight:bold;'>■</span> Alto Risco",
+                    unsafe_allow_html=True
+                )
+                st.divider()
+                st.markdown(
+                    "<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Principal<br>"
+                    "<span style='color:#4169E1; font-weight:bold;'>- -</span> Trajetórias Secundárias<br>"
+                    "<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    "<span style='color:#006400; font-weight:bold;'>■</span> Carteira Inicial<br>"
+                    "<span style='color:#8B0000; font-weight:bold;'>■</span> Risco Crítico<br>"
+                    "<span style='color:#FF0000; font-weight:bold;'>■</span> Risco Alto<br>"
+                    "<span style='color:#FFA500; font-weight:bold;'>■</span> Risco Médio<br>"
+                    "<span style='color:#83fc85; font-weight:bold;'>■</span> Risco Baixo<br>"
+                    "<span style='color:#D3D3D3; font-weight:bold;'>■</span> Sem Evidência<br>"
+                    "<span style='border:2px solid blue; padding:1px 4px;'>Nó</span> Em Trajetória",
+                    unsafe_allow_html=True
+                )
+                st.divider()
+                st.markdown(
+                    "<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Provável<br>"
+                    "<span style='color:#4169E1; font-weight:bold;'>- -</span> Trajetórias Secundárias<br>"
+                    "<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
+                    unsafe_allow_html=True
+                )
+
+        st.divider()
+
+        # =========================
+        # MÉTRICAS DE REDUÇÃO (expander abaixo do grafo)
+        # =========================
+        with st.expander("📊 Métricas de Redução do Grafo", expanded=False):
             col1, col2, col3 = st.columns(3)
-            
+
             grafo_inicial = historico[0]['grafo']
             nos_iniciais = grafo_inicial.number_of_nodes()
             arestas_iniciais = grafo_inicial.number_of_edges()
-            
+
             grafo_atual = etapa['grafo']
             nos_atuais = grafo_atual.number_of_nodes()
             arestas_atuais = grafo_atual.number_of_edges()
-            
+
             with col1:
                 reducao_nos = ((nos_iniciais - nos_atuais) / nos_iniciais) * 100
                 st.metric(
@@ -696,7 +795,7 @@ def interface():
                     value=f"{nos_atuais}",
                     delta=f"-{reducao_nos:.1f}% ({nos_iniciais - nos_atuais} removidos)"
                 )
-            
+
             with col2:
                 reducao_arestas = ((arestas_iniciais - arestas_atuais) / arestas_iniciais) * 100
                 st.metric(
@@ -704,13 +803,12 @@ def interface():
                     value=f"{arestas_atuais}",
                     delta=f"-{reducao_arestas:.1f}% ({arestas_iniciais - arestas_atuais} removidas)"
                 )
-            
+
             with col3:
-                # Densidade do grafo
                 densidade_inicial = nx.density(grafo_inicial.to_undirected())
                 densidade_atual = nx.density(grafo_atual.to_undirected())
                 variacao_densidade = ((densidade_atual - densidade_inicial) / densidade_inicial) * 100 if densidade_inicial > 0 else 0
-                
+
                 st.metric(
                     label="Densidade",
                     value=f"{densidade_atual:.4f}",
@@ -718,13 +816,11 @@ def interface():
                 )
 
         # =========================
-        # PROGRESSO DAS ETAPAS
+        # PROGRESSO DAS ETAPAS (expander abaixo do grafo)
         # =========================
         with st.expander("🔄 Pipeline de Transformação", expanded=False):
-            # Barra de progresso horizontal
             etapa_nomes = [h['nome'] for h in historico]
-            etapa_atual_idx = index_seguro 
-            # Mostra etapas como badges
+            etapa_atual_idx = index_seguro
             cols = st.columns(len(etapa_nomes))
             for i, (col, nome) in enumerate(zip(cols, etapa_nomes)):
                 with col:
@@ -734,137 +830,8 @@ def interface():
                         st.info(f"🔵 {nome.split('.')[1].strip()}")
                     else:
                         st.text(f"⬜ {nome.split('.')[1].strip()}")
-            
+
             st.progress((index_seguro + 1) / len(historico))
-
-        # =========================
-        # GRAFO INTERATIVO
-        # =========================
-        dg.renderizar_grafo_interativo(
-            G=etapa["grafo"],
-            carteira_principal=st.session_state.get("wallet_ativo", "desconhecida"),
-            scores=etapa["scores"],
-            trajetorias_destacadas=etapa.get("trajetorias"),
-            possiveis_mixers=etapa.get("possiveis_mixers"),
-            carteiras_alto_risco=etapa.get("carteiras_alto_risco"),
-            mostrar_nomes_carteiras=st.session_state.mostrar_nomes,
-            mostrar_valores_transacoes=st.session_state.mostrar_valores
-        )
-
-        st.divider()
-
-        # =========================
-        # NAVEGAÇÃO
-        # =========================
-        col1, col2, col3 = st.columns([1, 3, 1])
-
-        with col1:
-            if st.button("⬅️", key="prev"):
-                if st.session_state.grafo_index > 0:
-                    # Reseta as opções de visualização ao navegar
-                    st.session_state.mostrar_nomes = True
-                    st.session_state.mostrar_valores = True
-                    st.session_state.grafo_index -= 1
-                    st.rerun()
-
-        with col3:
-            if st.button("➡️", key="next"):
-                if st.session_state.grafo_index < len(historico) - 1:
-                    # Reseta as opções de visualização ao navegar
-                    st.session_state.mostrar_nomes = True
-                    st.session_state.mostrar_valores = True
-                    st.session_state.grafo_index += 1
-                    st.rerun()
-
-        st.subheader(etapa["nome"])
-
-        # =========================
-        # MÉTRICAS ESPECÍFICAS DA ETAPA
-        # =========================
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Nós", etapa['grafo'].number_of_nodes())
-        with col2:
-            st.metric("Arestas", etapa['grafo'].number_of_edges())
-        with col3:
-            st.metric("Carteiras Alto Risco", 
-                    len([s for s in etapa['scores'].values() if s['risco'] == 'ALTO']))
-        with col4:
-            trajetorias = etapa.get('trajetorias', [])
-            if trajetorias:
-                st.metric("Tamanho da Rota Principal", len(trajetorias[0].get('caminho', [])))
-            else:
-                st.metric("Tamanho da Rota Principal", "N/A")
-
-        st.divider()
-
-        # =========================
-        # LEGENDA
-        # =========================
-        with st.columns([1])[0]:
-            if etapa["nome"] == "7. Grafo Final (Consolidado)":
-                st.caption(
-                    f"**Nós:** "
-                    f"<span style='color:#006400; font-weight:bold;'>■</span> Carteira Inicial | "
-                    f"<span style='color:#8400FF; font-weight:bold;'>■</span> Possível Mixer | "
-                    f"<span style='color:#800000; font-weight:bold;'>■</span> Alto Risco | "
-                    f"Nó com **Borda Azul** = Parte de Trajetória",
-                    unsafe_allow_html=True
-                )
-                st.caption(
-                    f"**Arestas:** "
-                    f"<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Principal | "
-                    f"<span style='color:#4169E1; font-weight:bold;'>- - -</span> Trajetórias Secundárias | "
-                    f"<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.caption(
-                    f"**Nós (Grau de Risco):** "
-                    f"<span style='color:#006400; font-weight:bold;'>■</span> Carteira Inicial | "
-                    f"<span style='color:#8B0000; font-weight:bold;'>■</span> Crítico | "
-                    f"<span style='color:#FF0000; font-weight:bold;'>■</span> Alto | "
-                    f"<span style='color:#FFA500; font-weight:bold;'>■</span> Médio | "
-                    f"<span style='color:#83fc85; font-weight:bold;'>■</span> Baixo | "
-                    f"<span style='color:#D3D3D3; font-weight:bold;'>■</span> Sem Evidência | "
-                    f"Nó com **Borda Azul** = Parte de Trajetória",
-                    unsafe_allow_html=True
-                )
-                st.caption(
-                    f"**Arestas:**"
-                    f"<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Provável | "
-                    f"<span style='color:#4169E1; font-weight:bold;'>- - -</span> Trajetórias Secundárias | "
-                    f"<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
-                    unsafe_allow_html=True
-                    )
-        
-        st.divider()
-        
-        # =========================
-        # OPÇÕES DE VISUALIZAÇÃO
-        # =========================
-        col_opt1, col_opt2 = st.columns(2)
-        with col_opt1:
-            st.session_state.mostrar_nomes = st.checkbox("Exibir nomes das carteiras", value=st.session_state.mostrar_nomes, key="mostrar_nomes_cb")
-        with col_opt2:
-            st.session_state.mostrar_valores = st.checkbox("Exibir valores das transações", value=st.session_state.mostrar_valores, key="mostrar_valores_cb")
-
-        # =========================
-        # GRAFO INTERATIVO
-        # =========================
-        dg.renderizar_grafo_interativo(
-            G=etapa["grafo"],
-            carteira_principal=st.session_state.get("wallet_ativo", "desconhecida"),
-            scores=etapa["scores"],
-            trajetorias_destacadas=etapa.get("trajetorias"),
-            possiveis_mixers=etapa.get("possiveis_mixers"),
-            carteiras_alto_risco=etapa.get("carteiras_alto_risco"),
-            mostrar_nomes_carteiras=st.session_state.mostrar_nomes,
-            mostrar_valores_transacoes=st.session_state.mostrar_valores
-        )
-
-        st.divider()
 
         # =========================
         # TABELA COMPARATIVA DAS ETAPAS
@@ -874,14 +841,14 @@ def interface():
             for i, h in enumerate(historico):
                 g = h['grafo']
                 scores = h['scores']
-                
+
                 alto_risco = len([s for s in scores.values() if s['risco'] == 'ALTO'])
                 medio_risco = len([s for s in scores.values() if s['risco'] == 'MEDIO'])
-                
+
                 nome_etapa = h['nome']
                 if '. ' in nome_etapa:
                     nome_etapa = nome_etapa.split('. ', 1)[1]
-                
+
                 dados_evolucao.append({
                     'Etapa': nome_etapa,
                     'Nós': g.number_of_nodes(),
@@ -891,20 +858,20 @@ def interface():
                     'Médio Risco': medio_risco,
                     'Tamanho Rota': len(h['trajetorias'][0]['caminho']) if h.get('trajetorias') else 0
                 })
-            
+
             df_evolucao = pd.DataFrame(dados_evolucao)
-            
+
             st.dataframe(
                 df_evolucao,
                 use_container_width=True,
                 hide_index=True
             )
-            
+
             try:
                 import plotly.graph_objects as go
-                
+
                 fig = go.Figure()
-                
+
                 fig.add_trace(go.Scatter(
                     x=df_evolucao['Etapa'],
                     y=df_evolucao['Nós'],
@@ -913,7 +880,7 @@ def interface():
                     line=dict(color='blue', width=3),
                     marker=dict(size=10)
                 ))
-                
+
                 fig.add_trace(go.Scatter(
                     x=df_evolucao['Etapa'],
                     y=df_evolucao['Arestas'],
@@ -923,7 +890,7 @@ def interface():
                     marker=dict(size=10),
                     yaxis='y2'
                 ))
-                
+
                 fig.update_layout(
                     title={
                         'text': 'Redução do Grafo por Etapa',
@@ -945,7 +912,7 @@ def interface():
                         'title': {
                             'text': 'Arestas',
                             'font': {'color': 'red'}
-                            },
+                        },
                         'tickfont': {'color': 'red'},
                         'overlaying': 'y',
                         'side': 'right'
@@ -960,9 +927,9 @@ def interface():
                     },
                     margin=dict(t=50, b=100)
                 )
-                
+
                 st.plotly_chart(fig, use_container_width=True)
-                
+
             except Exception as e:
                 st.warning(f"Gráfico Plotly não disponível: {e}")
 
