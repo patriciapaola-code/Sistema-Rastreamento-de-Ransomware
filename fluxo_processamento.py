@@ -2,7 +2,7 @@ import streamlit as st
 import app_streamlit as ui
 
 
-def executar_pipeline_completo(wallet, profundidade=4, max_vizinhos=100, max_nos=500, sensibilidade="Médio", comportamentos=None):
+def executar_pipeline_completo(wallet, profundidade=4, max_vizinhos=100, max_nos=500, sensibilidade="Médio", comportamentos=None, valor_minimo=None, valor_maximo=None):
     """Orquestra a execução do pipeline reutilizando a função de processamento
     definida em `app_streamlit.py` e retorna um dicionário com os dados.
     """
@@ -14,6 +14,8 @@ def executar_pipeline_completo(wallet, profundidade=4, max_vizinhos=100, max_nos
         max_nos=max_nos,
         sensibilidade=sensibilidade,
         comportamentos=comportamentos,
+        valor_minimo=valor_minimo,
+        valor_maximo=valor_maximo,
     )
 
     return {

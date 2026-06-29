@@ -235,7 +235,7 @@ def classificarRisco(score):
         return "BAIXO"
     return "SEM EVIDENCIA"
 
-def calcularScoreRisco(G, carteira_inicial, coinjoin_suspeitas=None):
+def calcularScoreRisco(G, carteira_inicial, coinjoin_suspeitas=None, sensibilidade="Médio", comportamentos=None):
     if G.number_of_nodes() == 0:
         return {}
 
@@ -270,6 +270,17 @@ def calcularScoreRisco(G, carteira_inicial, coinjoin_suspeitas=None):
     maior_pagerank = max(pagerank.values(), default=0)
     maior_betweenness = max(betweenness.values(), default=0)
 
+    # Limiares baseados no nível de sensibilidade
+    if sensibilidade == "Alto":
+        limiar_alto = 55
+        limiar_medio = 25
+    elif sensibilidade == "Baixo":
+        limiar_alto = 85
+        limiar_medio = 55
+    else:
+        limiar_alto = 70
+        limiar_medio = 40
+
     scores = {}
 
     for no in G.nodes():
@@ -286,51 +297,68 @@ def calcularScoreRisco(G, carteira_inicial, coinjoin_suspeitas=None):
                 score += score_distancia
                 motivos.append(f"distancia {distancia} da carteira inicial")
 
-        grau_score = normalizar(graus.get(no, 0), maior_grau) * 20
-        if grau_score >= 8:
-            motivos.append("muitas conexoes")
-        score += grau_score
+        # Comportamento: Fan-in / Fan-out
+        if comportamentos is None or comportamentos.get("fan_in", True) or comportamentos.get("fan_out", True):
+            grau_score = normalizar(graus.get(no, 0), maior_grau) * 20
+            if grau_score >= 8:
+                motivos.append("muitas conexoes")
+            score += grau_score
 
-        pr_score = normalizar(pagerank.get(no, 0), maior_pagerank) * 15
-        if pr_score >= 6:
-            motivos.append("PageRank relevante")
-        score += pr_score
+            pr_score = normalizar(pagerank.get(no, 0), maior_pagerank) * 15
+            if pr_score >= 6:
+                motivos.append("PageRank relevante")
+            score += pr_score
 
-        between_score = normalizar(betweenness.get(no, 0), maior_betweenness) * 15
-        if between_score >= 6:
-            motivos.append("atua como intermediaria")
-        score += between_score
+            between_score = normalizar(betweenness.get(no, 0), maior_betweenness) * 15
+            if between_score >= 6:
+                motivos.append("atua como intermediaria")
+            score += between_score
 
         arestas = list(G.in_edges(no, keys=True, data=True)) + list(G.out_edges(no, keys=True, data=True))
 
-        if any(dados.get("valor_semelhante") for _, _, _, dados in arestas):
-            score += 10
-            motivos.append("transaciona valores semelhantes")
+        # Comportamento: Valores Fracionados / Similaridades
+        if comportamentos is None or comportamentos.get("fracionado", True):
+            if any(dados.get("valor_semelhante") for _, _, _, dados in arestas):
+                score += 10
+                motivos.append("transaciona valores semelhantes")
 
-        if any(dados.get("burst") for _, _, _, dados in arestas):
-            score += 15
-            motivos.append("atividade em janela temporal suspeita")
+        # Comportamento: Cadeias rápidas / Burst / Temporal
+        if comportamentos is None or comportamentos.get("cadeia_rapida", True):
+            if any(dados.get("burst") for _, _, _, dados in arestas):
+                score += 15
+                motivos.append("atividade em janela temporal suspeita")
 
-        if G.nodes[no].get("chain_node", False):
-            score += 5
-            motivos.append("participa de cadeia simples")
+            if G.nodes[no].get("chain_node", False):
+                score += 5
+                motivos.append("participa de cadeia simples")
 
-        # Sinal de CoinJoin: checa pelo txid presente nas arestas do no atual,
-        # nao pelo ID da carteira (que pode ter mudado por fusao de nos)
-        txids_no = {d.get("txid") for _, _, _, d in arestas if d.get("txid")}
-        txids_suspeitos = txids_no & coinjoin_suspeitas.keys()
+        # Comportamento: Mixers / CoinJoin
+        if comportamentos is None or comportamentos.get("mixer", True):
+            txids_no = {d.get("txid") for _, _, _, d in arestas if d.get("txid")}
+            txids_suspeitos = txids_no & coinjoin_suspeitas.keys()
 
-        if txids_suspeitos:
-            score += 8
-            motivos.append(
-                f"participou de {len(txids_suspeitos)} transacao(oes) "
-                f"com denominacao suspeita de CoinJoin"
-            )
+            if txids_suspeitos:
+                score += 8
+                motivos.append(
+                    f"participou de {len(txids_suspeitos)} transacao(oes) "
+                    f"com denominacao suspeita de CoinJoin"
+                )
 
         score = float(min(100, round(score, 2)))
+
+        # Classificação dinâmica de risco baseada na sensibilidade
+        if score >= limiar_alto:
+            risco = "ALTO"
+        elif score >= limiar_medio:
+            risco = "MEDIO"
+        elif score > 0:
+            risco = "BAIXO"
+        else:
+            risco = "SEM EVIDENCIA"
+
         scores[no] = {
             "score": score,
-            "risco": classificarRisco(score),
+            "risco": risco,
             "motivos": motivos if motivos else ["sem evidencia forte"]
         }
 

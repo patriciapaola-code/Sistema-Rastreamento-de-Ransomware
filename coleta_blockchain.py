@@ -78,11 +78,14 @@ def obterNeighbors(address, limite_transacoes):
 
         return []
 
-def expandirGrafo(address, profundidade, max_vizinhos, max_nos, max_edges):
+def expandirGrafo(address, profundidade, max_vizinhos, max_nos, max_edges, valor_minimo=None, valor_maximo=None):
     G = nx.MultiDiGraph()
     fila = [address]
     visitados = set()
     nivel = 0
+
+    valor_min_sat = valor_minimo * 100_000_000 if valor_minimo is not None else 0
+    valor_max_sat = valor_maximo * 100_000_000 if valor_maximo is not None else float('inf')
 
     while fila and nivel < profundidade:
         proxima_fila = []
@@ -92,7 +95,8 @@ def expandirGrafo(address, profundidade, max_vizinhos, max_nos, max_edges):
                 continue
 
             visitados.add(atual)
-            vizinhos = obterNeighbors(atual, 10)
+            # Aumentamos o limite de transações buscadas para garantir vizinhos após o filtro
+            vizinhos = obterNeighbors(atual, max(10, max_vizinhos))
 
             for vizinho in vizinhos[:max_vizinhos]:
                 destino = vizinho["address"]
@@ -100,6 +104,10 @@ def expandirGrafo(address, profundidade, max_vizinhos, max_nos, max_edges):
                 if not destino:
                     continue
                 
+                # Aplica o filtro de valor das transações
+                if not (valor_min_sat <= vizinho["value"] <= valor_max_sat):
+                    continue
+
                 if vizinho["tipo"] == "input":
                     origem_real = destino
                     destino_real = atual

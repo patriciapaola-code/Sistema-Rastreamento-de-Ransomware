@@ -61,7 +61,7 @@ def is_grafo_valido(G): # Verifica se o grafo é válido (não nulo e com nós)
 # ==============================================================================
 @st.cache_resource(show_spinner=False)
 def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos=500,
-                               sensibilidade="Médio", comportamentos=None):
+                               sensibilidade="Médio", comportamentos=None, valor_minimo=None, valor_maximo=None):
     historico = []
     
    
@@ -69,7 +69,8 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # 1. GRAFO BRUTO (Ponto de falha crítico) eliminar a divisão por zero em caso de grafo vazio
     # =========================
     G_bruto = cb.expandirGrafo(wallet, profundidade=profundidade, 
-                                max_vizinhos=max_vizinhos, max_nos=max_nos, max_edges=600)
+                                max_vizinhos=max_vizinhos, max_nos=max_nos, max_edges=600,
+                                valor_minimo=valor_minimo, valor_maximo=valor_maximo)
 
 
     # Verifica se o grafo existe e se ele tem pelo menos um nó
@@ -82,7 +83,7 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
         return [], {"error": "Nenhum dado transacional encontrado para esta carteira."}
 
     # Agora o cálculo é seguro
-    score_bruto = ht.calcularScoreRisco(G_bruto, wallet)
+    score_bruto = ht.calcularScoreRisco(G_bruto, wallet, sensibilidade=sensibilidade, comportamentos=comportamentos)
     historico.append({
         "nome": "1. Grafo Bruto",
         "grafo": G_bruto,
@@ -108,7 +109,7 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     uf, coinjoin_suspeitas = ht.heuristicaMultiInput(G_bruto)
     G_multi = cb.construirGrafoFiltrado(G_bruto, uf)
     
-    score_multi = ht.calcularScoreRisco(G_multi, wallet, coinjoin_suspeitas=coinjoin_suspeitas)
+    score_multi = ht.calcularScoreRisco(G_multi, wallet, coinjoin_suspeitas=coinjoin_suspeitas, sensibilidade=sensibilidade, comportamentos=comportamentos)
     trajetorias_multi = ht.encontrarTrajetoriasProvaveis(nx.DiGraph(G_multi), wallet, score_multi)
     historico.append({
         "nome": "2. Multi-Input (Agrupamento de Carteiras)",
@@ -120,9 +121,12 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # =========================
     # 3. VALORES (Marca similaridades)
     # =========================
-    G_valores = ht.aplicarValores(G_multi)
+    if comportamentos is None or comportamentos.get("fracionado", True):
+        G_valores = ht.aplicarValores(G_multi)
+    else:
+        G_valores = G_multi.copy()
     
-    score_valores = ht.calcularScoreRisco(G_valores, wallet, coinjoin_suspeitas=coinjoin_suspeitas)
+    score_valores = ht.calcularScoreRisco(G_valores, wallet, coinjoin_suspeitas=coinjoin_suspeitas, sensibilidade=sensibilidade, comportamentos=comportamentos)
     trajetorias_valores = ht.encontrarTrajetoriasProvaveis(nx.DiGraph(G_valores), wallet, score_valores)
     historico.append({
         "nome": "3. Análise de Valores",
@@ -134,9 +138,12 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # =========================
     # 4. TEMPO (Filtra janelas suspeitas)
     # =========================
-    G_tempo = ht.aplicarTempo(G_valores)
+    if comportamentos is None or comportamentos.get("cadeia_rapida", True):
+        G_tempo = ht.aplicarTempo(G_valores)
+    else:
+        G_tempo = G_valores.copy()
     
-    score_tempo = ht.calcularScoreRisco(G_tempo, wallet, coinjoin_suspeitas=coinjoin_suspeitas)
+    score_tempo = ht.calcularScoreRisco(G_tempo, wallet, coinjoin_suspeitas=coinjoin_suspeitas, sensibilidade=sensibilidade, comportamentos=comportamentos)
     trajetorias_tempo = ht.encontrarTrajetoriasProvaveis(nx.DiGraph(G_tempo), wallet, score_tempo)
     historico.append({
         "nome": "4. Filtro Temporal",
@@ -150,7 +157,7 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # =========================
     G_change = ht.aplicarChangeAddress(G_tempo)
     
-    score_change = ht.calcularScoreRisco(G_change, wallet, coinjoin_suspeitas=coinjoin_suspeitas)
+    score_change = ht.calcularScoreRisco(G_change, wallet, coinjoin_suspeitas=coinjoin_suspeitas, sensibilidade=sensibilidade, comportamentos=comportamentos)
     trajetorias_change = ht.encontrarTrajetoriasProvaveis(nx.DiGraph(G_change), wallet, score_change)
     historico.append({
         "nome": "5. Change Address (Remoção de Troco)",
@@ -162,9 +169,12 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # =========================
     # 6. CHAIN (Simplifica caminhos lineares)
     # =========================
-    G_chain = ht.aplicarChain(G_change)
+    if comportamentos is None or comportamentos.get("cadeia_rapida", True):
+        G_chain = ht.aplicarChain(G_change)
+    else:
+        G_chain = G_change.copy()
     
-    score_chain = ht.calcularScoreRisco(G_chain, wallet, coinjoin_suspeitas=coinjoin_suspeitas)
+    score_chain = ht.calcularScoreRisco(G_chain, wallet, coinjoin_suspeitas=coinjoin_suspeitas, sensibilidade=sensibilidade, comportamentos=comportamentos)
     trajetorias_chain = ht.encontrarTrajetoriasProvaveis(nx.DiGraph(G_chain), wallet, score_chain)
     historico.append({
         "nome": "6. Simplificação de Cadeias",
@@ -176,7 +186,11 @@ def carregar_toda_a_blockchain(wallet, profundidade=4, max_vizinhos=100, max_nos
     # =========================
     # 7. DOSSIÊ FINAL
     # =========================
-    possiveis_mixers_final = ht.detectarPossiveisMixers(G_chain)
+    if comportamentos is None or comportamentos.get("mixer", True):
+        possiveis_mixers_final = ht.detectarPossiveisMixers(G_chain)
+    else:
+        possiveis_mixers_final = []
+
     dossie = ds.gerarDossieInvestigativo(
         G_chain, wallet, score_chain, 
         trajetorias_chain, possiveis_mixers_final, coinjoin_suspeitas=coinjoin_suspeitas
@@ -351,20 +365,6 @@ def interface():
                 help="Filtrar transações acima deste valor"
             )
         
-        # Intervalo de datas
-        st.markdown("### 📅 Intervalo Temporal")
-        col_data1, col_data2 = st.columns(2)
-        with col_data1:
-            data_inicio = st.date_input(
-                "Data de início:",
-                help="Filtrar transações a partir desta data"
-            )
-        with col_data2:
-            data_fim = st.date_input(
-                "Data de término:",
-                help="Filtrar transações até esta data"
-            )
-        
         # Nível de sensibilidade
         st.markdown("### ⚠️ Nível de Sensibilidade da Detecção de Risco")
         sensibilidade = st.radio(
@@ -401,8 +401,6 @@ def interface():
             st.session_state.max_nos_config = max_nos
             st.session_state.valor_minimo_config = valor_minimo
             st.session_state.valor_maximo_config = valor_maximo
-            st.session_state.data_inicio_config = data_inicio
-            st.session_state.data_fim_config = data_fim
             st.session_state.sensibilidade_config = sensibilidade
             st.session_state.comportamentos_config = {
                 "fan_in": detectar_fan_in,
@@ -486,6 +484,8 @@ def interface():
         max_nos_analise = st.session_state.get("max_nos_config", 500)
         sensibilidade_analise = st.session_state.get("sensibilidade_config", "Médio")
         comportamentos_analise = st.session_state.get("comportamentos_config", {})
+        valor_minimo_analise = st.session_state.get("valor_minimo_config", 0.1)
+        valor_maximo_analise = st.session_state.get("valor_maximo_config", 1000.0)
         
         # Mostrar progresso detalhado
         progress_placeholder = st.empty()
@@ -505,7 +505,9 @@ def interface():
                     max_vizinhos=max_vizinhos_analise,
                     max_nos=max_nos_analise,
                     sensibilidade=sensibilidade_analise,
-                    comportamentos=comportamentos_analise
+                    comportamentos=comportamentos_analise,
+                    valor_minimo=valor_minimo_analise,
+                    valor_maximo=valor_maximo_analise
                 )
                 
                 # Etapa 2: Análise
