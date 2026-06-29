@@ -738,6 +738,22 @@ def interface():
             st.progress((index_seguro + 1) / len(historico))
 
         # =========================
+        # GRAFO INTERATIVO
+        # =========================
+        dg.renderizar_grafo_interativo(
+            G=etapa["grafo"],
+            carteira_principal=st.session_state.get("wallet_ativo", "desconhecida"),
+            scores=etapa["scores"],
+            trajetorias_destacadas=etapa.get("trajetorias"),
+            possiveis_mixers=etapa.get("possiveis_mixers"),
+            carteiras_alto_risco=etapa.get("carteiras_alto_risco"),
+            mostrar_nomes_carteiras=st.session_state.mostrar_nomes,
+            mostrar_valores_transacoes=st.session_state.mostrar_valores
+        )
+
+        st.divider()
+
+        # =========================
         # NAVEGAÇÃO
         # =========================
         col1, col2, col3 = st.columns([1, 3, 1])
@@ -761,9 +777,6 @@ def interface():
                     st.rerun()
 
         st.subheader(etapa["nome"])
-
-    with tab_dossie:
-        dd.render_dashboard_dossie()
 
         # =========================
         # MÉTRICAS ESPECÍFICAS DA ETAPA
@@ -823,7 +836,6 @@ def interface():
                     f"<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Provável | "
                     f"<span style='color:#4169E1; font-weight:bold;'>- - -</span> Trajetórias Secundárias | "
                     f"<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
-
                     unsafe_allow_html=True
                     )
         
@@ -837,22 +849,6 @@ def interface():
             st.session_state.mostrar_nomes = st.checkbox("Exibir nomes das carteiras", value=st.session_state.mostrar_nomes, key="mostrar_nomes_cb")
         with col_opt2:
             st.session_state.mostrar_valores = st.checkbox("Exibir valores das transações", value=st.session_state.mostrar_valores, key="mostrar_valores_cb")
-
-        # =========================
-        # GRAFO INTERATIVO
-        # =========================
-        dg.renderizar_grafo_interativo(
-            G=etapa["grafo"],
-            carteira_principal=st.session_state.get("wallet_ativo", "desconhecida"),
-            scores=etapa["scores"],
-            trajetorias_destacadas=etapa.get("trajetorias"),
-            # Passa os dados extras para a função de renderização
-            possiveis_mixers=etapa.get("possiveis_mixers"),
-            carteiras_alto_risco=etapa.get("carteiras_alto_risco"),
-            # Passa as novas opções de visualização
-            mostrar_nomes_carteiras=st.session_state.mostrar_nomes,
-            mostrar_valores_transacoes=st.session_state.mostrar_valores
-        )
 
         st.divider()
 
@@ -868,7 +864,6 @@ def interface():
                 alto_risco = len([s for s in scores.values() if s['risco'] == 'ALTO'])
                 medio_risco = len([s for s in scores.values() if s['risco'] == 'MEDIO'])
                 
-                # Extrai nome limpo da etapa
                 nome_etapa = h['nome']
                 if '. ' in nome_etapa:
                     nome_etapa = nome_etapa.split('. ', 1)[1]
@@ -885,22 +880,17 @@ def interface():
             
             df_evolucao = pd.DataFrame(dados_evolucao)
             
-            # Mostra tabela
             st.dataframe(
                 df_evolucao,
                 use_container_width=True,
                 hide_index=True
             )
             
-            # =========================
-            # GRÁFICO
-            # =========================
             try:
                 import plotly.graph_objects as go
                 
                 fig = go.Figure()
                 
-                # Eixo Y principal - Nós
                 fig.add_trace(go.Scatter(
                     x=df_evolucao['Etapa'],
                     y=df_evolucao['Nós'],
@@ -910,7 +900,6 @@ def interface():
                     marker=dict(size=10)
                 ))
                 
-                # Eixo Y secundário - Arestas
                 fig.add_trace(go.Scatter(
                     x=df_evolucao['Etapa'],
                     y=df_evolucao['Arestas'],
@@ -921,7 +910,6 @@ def interface():
                     yaxis='y2'
                 ))
                 
-                # Layout simplificado (sem parâmetros problemáticos)
                 fig.update_layout(
                     title={
                         'text': 'Redução do Grafo por Etapa',
@@ -963,11 +951,9 @@ def interface():
                 
             except Exception as e:
                 st.warning(f"Gráfico Plotly não disponível: {e}")
-                
-                # Fallback: gráfico simples do Streamlit
-                st.line_chart(
-                    df_evolucao.set_index('Etapa')[['Nós', 'Arestas']]
-                )
+
+    with tab_dossie:
+        dd.render_dashboard_dossie()
 
         # Dossiê (original)
         with st.expander("Dossiê Investigativo"):

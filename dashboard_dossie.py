@@ -85,7 +85,7 @@ def render_dashboard_dossie(dossie: Dict[str, Any] | None = None, caminho: str =
 
     indicadores = _resumo_indicadores(dossie)
 
-    st.title("📄 Dossiê Investigativo")
+    st.title("📄 Dashboard Investigativo")
     st.caption("Resumo visual do dossiê gerado durante a análise da carteira")
 
     col1, col2, col3 = st.columns(3)
@@ -123,7 +123,7 @@ def render_dashboard_dossie(dossie: Dict[str, Any] | None = None, caminho: str =
         st.plotly_chart(fig_barra, use_container_width=True)
         st.caption("A barra destaca quais categorias concentram mais sinais suspeitos.")
 
-    st.subheader("Mini Análise")
+    st.subheader("Síntese da Investigação")
     st.info(_texto_analise(dossie))
 
     tab_risco, tab_mixers, tab_observacoes = st.tabs(["Carteiras de Alto Risco", "Possíveis Mixers", "Observações"])
