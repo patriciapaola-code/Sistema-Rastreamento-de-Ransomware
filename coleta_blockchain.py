@@ -6,7 +6,7 @@ import time
 
 BASE_URL = "https://blockstream.info/api"
 
-def obterNeighbors(address, limite_transacoes):
+def obterNeighbors(address, limite_transacoes, ts_inicio=None, ts_fim=None):
 
     try:
         url = f"{BASE_URL}/address/{address}/txs"
@@ -35,7 +35,9 @@ def obterNeighbors(address, limite_transacoes):
                 "block_time",
                 None
             )
-
+            if ts_inicio is not None and ts_fim is not None and timestamp is not None:
+                if not (ts_inicio <= timestamp <= ts_fim):
+                    continue
             # Inputs
             for vin in tx.get("vin", []):
 

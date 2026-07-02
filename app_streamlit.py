@@ -288,7 +288,7 @@ def mostrar_resumo_grafo_sidebar():
 
 def interface():
 
-    st.title("BlockSentinAI - Sistema Inteligente para Rastreamento e Investigação de Ransomware em Blockchain.")
+    st.title("🕵️ BlockSentinAI - Sistema Inteligente para Rastreamento e Investigação de Ransomware em Blockchain.")
 
     # =========================
     # PAINEL DE CONFIGURAÇÃO DO USUÁRIO (ENTRADA)
@@ -301,7 +301,7 @@ def interface():
         st.session_state["executar_analise"] = False
 
     with st.expander("Análise de Carteira", expanded=True):
-        st.markdown("### Endereço da Carteira e Parâmetros de Busca")
+        st.markdown("### 📍 Endereço da Carteira e Parâmetros de Busca")
         
         col_wallet_1, col_wallet_2 = st.columns([3, 1])
         with col_wallet_1:
@@ -328,7 +328,7 @@ def interface():
             st.info(f"**Exemplo carregado:** {st.session_state.wallet_example}")
         
         # Parâmetros de busca
-        st.markdown("### Profundidade e Escala da Busca")
+        st.markdown("### 🔍 Profundidade e Escala da Busca")
         col1, col2, col3 = st.columns(3)
         with col1:
             profundidade = st.slider(
@@ -350,7 +350,7 @@ def interface():
             )
         
         # Filtros de transações
-        st.markdown("### Filtros de Transações")
+        st.markdown("### 💰 Filtros de Transações")
         col_val1, col_val2 = st.columns(2)
         with col_val1:
             valor_minimo = st.number_input(
@@ -364,22 +364,30 @@ def interface():
                 min_value=0.0, value=1000.0, step=1.0,
                 help="Filtrar transações acima deste valor"
             )
+# FILTRO TEMPORAL 
+        st.sidebar.subheader("Filtro Temporal")
+        col_inicio, col_fim = st.sidebar.columns(2)
+        with col_inicio:
+            data_inicio = st.date_input("Início", value=pd.to_datetime("2023-01-01"))
+        with col_fim:
+            data_fim = st.date_input("Fim", value=pd.to_datetime("today"))
+
+            ts_inicio = int(pd.Timestamp(data_inicio).timestamp())
+            ts_fim = int(pd.Timestamp(data_fim).timestamp())
+
         
         # Nível de sensibilidade
-        st.markdown("### Nível de Sensibilidade da Detecção de Risco")
+        st.markdown("### ⚠️ Nível de Sensibilidade da Detecção de Risco")
         sensibilidade = st.radio(
             "Selecione o nível de sensibilidade:",
             options=["Baixo", "Médio", "Alto"],
             index=1,
             horizontal=True,
-            help="Controla o rigor para classificar uma carteira como de risco. "
-                 "Alto: detecta mais suspeitos (pode ter mais falsos positivos). "
-                 "Médio: oferece um balanço equilibrado entre detecção e precisão. "
-                 "Baixo: foca apenas nos casos mais críticos."
+            help="Baixo: poucos alertas | Médio: equilibrado | Alto: máxima detecção"
         )
         
         # Comportamentos suspeitos
-        st.markdown("### Tipos de Comportamento Suspeito a Detectar")
+        st.markdown("### 🚨 Tipos de Comportamento Suspeito a Detectar")
         col_comp1, col_comp2 = st.columns(2)
         with col_comp1:
             detectar_fan_in = st.checkbox("Fan-in elevado", value=True, 
@@ -421,7 +429,7 @@ def interface():
         
         # Mostrar exemplo de carteira
         st.divider()
-        st.markdown("### Carteiras de Teste (Com Histórico Ativo)")
+        st.markdown("### 📚 Carteiras de Teste (Com Histórico Ativo)")
         
         # Abas com diferentes tipos de carteiras
         tab_segwit, tab_legacy, tab_ransomware = st.tabs(["SegWit (Recomendado)", "Legacy", "Histórico de Ransomware"])
@@ -466,15 +474,15 @@ def interface():
             with col_ran1:
                 st.caption("Carteira 1:")
                 st.code("1A1z7agoat4EvZ8eD6gL2pmCe4Sj7jzRH4", language="text")
-                st.caption("Carteira do Satoshi")
+                st.caption("⚠️ Satoshi's wallet")
             with col_ran2:
                 st.caption("Carteira 2:")
                 st.code("1dice8EMCQAqQSN3LGzJ72b3FYYyHBiUSo", language="text")
-                st.caption("Dice gambling (histórico)")
+                st.caption("📊 Dice gambling (histórico)")
             with col_ran3:
                 st.caption("Carteira 3:")
                 st.code("1HQ3Go3qs6LaRoVKKEZkj5GN6aRBjADSLU", language="text")
-                st.caption("Mixer histórico")
+                st.caption("🔄 Mixer histórico")
 
     # =========================
     # INIT GLOBAL STATE
@@ -589,9 +597,9 @@ def interface():
     # TABS
     # =========================
     tab_grafos, tab_dossie, tab_chat = st.tabs([
-        "Fluxo de Grafos",
-        "Dashboard Investigativo",
-        "Assistente IA Forense"
+        "📊 Fluxo de Grafos",
+        "📄 Dashboard Investigativo",
+        "🔎 Assistente IA Forense"
     ])
 
     # =========================
@@ -600,36 +608,36 @@ def interface():
     with st.container():
         col_info1, col_info2, col_info3, col_info4, col_info5 = st.columns(5)
         with col_info1:
-            st.metric( # Manter
-                "Carteira",
+            st.metric(
+                "📍 Carteira",
                 st.session_state.get("wallet_ativo", "")[:10] + "...",
                 help=st.session_state.get("wallet_ativo", "Desconhecida")
             )
         with col_info2:
             st.metric(
-                "Profundidade",
+                "🔍 Profundidade",
                 st.session_state.get("profundidade_config", 4),
                 help="Níveis de busca"
             )
         with col_info3:
             st.metric(
-                "Máx. Nós",
+                "📊 Máx. Nós",
                 st.session_state.get("max_nos_config", 500),
                 help="Limite de nós"
             )
         with col_info4:
             sensib = st.session_state.get("sensibilidade_config", "Médio")
             cor_sensib = "🟢" if sensib == "Baixo" else "🟡" if sensib == "Médio" else "🔴"
-            st.metric( # Manter
-                "Sensibilidade",
+            st.metric(
+                "⚠️ Sensibilidade",
                 f"{cor_sensib} {sensib}",
                 help="Nível de detecção de risco"
             )
         with col_info5:
             comportamentos = st.session_state.get("comportamentos_config", {})
             total_comportamentos = sum(1 for v in comportamentos.values() if v)
-            st.metric( # Manter
-                "Comportamentos",
+            st.metric(
+                "🚨 Comportamentos",
                 f"{total_comportamentos}/5",
                 help="Tipos de suspeita detectados"
             )
@@ -644,7 +652,7 @@ def interface():
         
         # 1. Verifica se a lista existe antes de qualquer coisa
         if not historico:
-            st.warning("### Investigação Inconclusiva")
+            st.warning("### 🔍 Investigação Inconclusiva")
             st.markdown("""
             Não foi possível obter dados transacionais suficientes para este endereço. 
             Isso ocorre devido a restrições técnicas na indexação de carteiras ou 
@@ -671,14 +679,14 @@ def interface():
         # 1. TÍTULO NO TOPO
         # =========================
         st.markdown(
-            f"<h3 style='text-align:center; margin:0; padding:4px 0;'>{etapa['nome']}</h3>",
+            f"<h3 style='text-align:center; margin:0; padding:4px 0;'>🌐 {etapa['nome']}</h3>",
             unsafe_allow_html=True
         )
 
         # =========================
         # 2. MÉTRICAS DE REDUÇÃO DO GRAFO
         # =========================
-        with st.expander("Métricas de Redução do Grafo", expanded=False):
+        with st.expander("📊 Métricas de Redução do Grafo", expanded=False):
             col1, col2, col3 = st.columns(3)
 
             grafo_inicial = historico[0]['grafo']
@@ -719,9 +727,9 @@ def interface():
         # =========================
         # 3. PIPELINE DE TRANSFORMAÇÃO (com navegação embutida)
         # =========================
-        with st.expander("Pipeline de Transformação", expanded=False):
+        with st.expander("🔄 Pipeline de Transformação", expanded=False):
             # Navegação anterior/próxima
-            col_nav1, col_nav_label, col_nav2 = st.columns([1, 8, 1])
+            col_nav1, col_nav_label, col_nav2 = st.columns([1, 5, 1])
             with col_nav1:
                 if st.button("⬅️ Anterior", key="prev", disabled=(index == 0)):
                     st.session_state.mostrar_nomes = True
@@ -774,6 +782,20 @@ def interface():
             else:
                 st.metric("Tamanho da Rota Principal", "N/A")
 
+        col_opt1, col_opt2 = st.columns(2)
+        with col_opt1:
+            st.session_state.mostrar_nomes = st.checkbox(
+                "Exibir nomes das carteiras",
+                value=st.session_state.mostrar_nomes,
+                key="mostrar_nomes_cb"
+            )
+        with col_opt2:
+            st.session_state.mostrar_valores = st.checkbox(
+                "Exibir valores das transações",
+                value=st.session_state.mostrar_valores,
+                key="mostrar_valores_cb"
+            )
+
         # =========================
         # 5. EXIBIÇÃO DO GRAFO (grafo interativo + legenda)
         # =========================
@@ -792,21 +814,8 @@ def interface():
             )
 
         with col_legenda:
-            st.markdown("**Opções de Exibição**")
-            st.checkbox(
-                "Nomes das carteiras",
-                value=st.session_state.get("mostrar_nomes", True),
-                key="mostrar_nomes", # Usar a chave diretamente no session_state
-                help="Exibe um nome genérico (ex: wallet_1) sobre cada nó."
-            )
-            st.checkbox(
-                "Valores das transações",
-                value=st.session_state.get("mostrar_valores", True),
-                key="mostrar_valores", # Usar a chave diretamente no session_state
-                help="Exibe o valor em BTC e o início do TXID sobre cada aresta."
-            )
-            st.divider()
             st.markdown("**Legenda**")
+            st.divider()
             if etapa["nome"] == "7. Grafo Final (Consolidado)":
                 st.markdown(
                     "<span style='color:#006400; font-weight:bold;'>■</span> Carteira Inicial<br>"
@@ -817,7 +826,7 @@ def interface():
                 st.divider()
                 st.markdown(
                     "<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Principal<br>"
-                    "<span style='color:#4169E1; font-weight:bold;'>┄┄┄</span> Trajetórias Secundárias<br>"
+                    "<span style='color:#4169E1; font-weight:bold;'>- -</span> Trajetórias Secundárias<br>"
                     "<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
                     unsafe_allow_html=True
                 )
@@ -835,7 +844,7 @@ def interface():
                 st.divider()
                 st.markdown(
                     "<span style='color:#0000FF; font-weight:bold;'>━━</span> Trajetória Provável<br>"
-                    "<span style='color:#4169E1; font-weight:bold;'>┄┄┄</span> Trajetórias Secundárias<br>"
+                    "<span style='color:#4169E1; font-weight:bold;'>- -</span> Trajetórias Secundárias<br>"
                     "<span style='color:#b5b0a3; font-weight:bold;'>━━</span> Transação",
                     unsafe_allow_html=True
                 )
@@ -845,7 +854,7 @@ def interface():
         # =========================
         # 6. EVOLUÇÃO DAS MÉTRICAS POR ETAPA
         # =========================
-        with st.expander("Evolução das Métricas por Etapa", expanded=False):
+        with st.expander("📈 Evolução das Métricas por Etapa", expanded=False):
             dados_evolucao = []
             for i, h in enumerate(historico):
                 g = h['grafo']
@@ -885,9 +894,9 @@ def interface():
                     x=df_evolucao['Etapa'],
                     y=df_evolucao['Nós'],
                     mode='lines+markers',
-                    name='Nós', # Alterado para uma cor de alto contraste
-                    line=dict(color='#39FF14', width=3), # Verde-limão
-                    marker=dict(size=10, color='#39FF14')
+                    name='Nós',
+                    line=dict(color='blue', width=3),
+                    marker=dict(size=10)
                 ))
 
                 fig.add_trace(go.Scatter(
@@ -895,7 +904,7 @@ def interface():
                     y=df_evolucao['Arestas'],
                     mode='lines+markers',
                     name='Arestas',
-                    line=dict(color='#FF4500', width=3), # Laranja-vermelho
+                    line=dict(color='red', width=3),
                     marker=dict(size=10),
                     yaxis='y2'
                 ))
@@ -913,16 +922,16 @@ def interface():
                     yaxis={
                         'title': {
                             'text': 'Nós',
-                            'font': {'color': '#39FF14'} # Cor do título do eixo
+                            'font': {'color': 'blue'}
                         },
-                        'tickfont': {'color': '#39FF14'} # Cor dos números do eixo
+                        'tickfont': {'color': 'blue'}
                     },
                     yaxis2={
                         'title': {
                             'text': 'Arestas',
-                            'font': {'color': '#FF4500'}
+                            'font': {'color': 'red'}
                         },
-                        'tickfont': {'color': '#FF4500'},
+                        'tickfont': {'color': 'red'},
                         'overlaying': 'y',
                         'side': 'right'
                     },
@@ -946,12 +955,8 @@ def interface():
         dd.render_dashboard_dossie()
 
         # Dossiê (original)
-        with st.expander("Dossiê Investigativo (Arquivo JSON)", expanded=False):
-            if st.session_state.get("dossie", None) is not None:
-                st.markdown("### Estrutura do Dossiê")
-                st.json(st.session_state.dossie)
-            else:
-                st.json(st.session_state.dossie)
+        with st.expander("Dossiê Investigativo"):
+            st.json(st.session_state.dossie)
 
     # ================================
     # ABA 2 - CHAT
@@ -963,7 +968,7 @@ def interface():
             st.info("O assistente de IA estará disponível assim que o processamento inicial da blockchain for concluído.")
             st.warning("Por favor, aguarde a geração do dossiê.")
         else:
-            st.subheader("Chat Forense Blockchain")
+            st.subheader("🔎 Chat Forense Blockchain")
             st.caption("Investigação assistida por Inteligência Artificial")
 
             if st.session_state.agent is None:
