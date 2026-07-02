@@ -365,16 +365,20 @@ def interface():
                 help="Filtrar transações acima deste valor"
             )
 # FILTRO TEMPORAL 
-        st.sidebar.subheader("###Filtro Temporal")
-        col_inicio, col_fim = st.sidebar.columns(2)
-        with col_inicio:
-            data_inicio = st.date_input("Início", value=pd.to_datetime("2023-01-01"))
-        with col_fim:
-            data_fim = st.date_input("Fim", value=pd.to_datetime("today"))
-
-            ts_inicio = int(pd.Timestamp(data_inicio).timestamp())
-            ts_fim = int(pd.Timestamp(data_fim).timestamp())
-
+         # Intervalo de datas
+        st.markdown("### 📅 Intervalo Temporal")
+        col_data1, col_data2 = st.columns(2)
+        with col_data1:
+            data_inicio = st.date_input(
+                "Data de início:",
+                help="Filtrar transações a partir desta data"
+            )
+        with col_data2:
+            data_fim = st.date_input(
+                "Data de término:",
+                help="Filtrar transações até esta data"
+            )
+        
         
         # Nível de sensibilidade
         st.markdown("### ⚠️ Nível de Sensibilidade da Detecção de Risco")
