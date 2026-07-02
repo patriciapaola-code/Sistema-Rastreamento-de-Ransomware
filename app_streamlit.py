@@ -288,7 +288,7 @@ def mostrar_resumo_grafo_sidebar():
 
 def interface():
 
-    st.title("🕵️ BlockSentinAI - Sistema Inteligente para Rastreamento e Investigação de Ransomware em Blockchain.")
+    st.title(" BlockSentinAI - Sistema Inteligente para Rastreamento e Investigação de Ransomware em Blockchain.")
 
     # =========================
     # PAINEL DE CONFIGURAÇÃO DO USUÁRIO (ENTRADA)
@@ -301,7 +301,7 @@ def interface():
         st.session_state["executar_analise"] = False
 
     with st.expander("Análise de Carteira", expanded=True):
-        st.markdown("### 📍 Endereço da Carteira e Parâmetros de Busca")
+        st.markdown("### Endereço da Carteira e Parâmetros de Busca")
         
         col_wallet_1, col_wallet_2 = st.columns([3, 1])
         with col_wallet_1:
@@ -328,7 +328,7 @@ def interface():
             st.info(f"**Exemplo carregado:** {st.session_state.wallet_example}")
         
         # Parâmetros de busca
-        st.markdown("### 🔍 Profundidade e Escala da Busca")
+        st.markdown("###  Profundidade e Escala da Busca")
         col1, col2, col3 = st.columns(3)
         with col1:
             profundidade = st.slider(
@@ -350,7 +350,7 @@ def interface():
             )
         
         # Filtros de transações
-        st.markdown("### 💰 Filtros de Transações")
+        st.markdown("### Filtros de Transações")
         col_val1, col_val2 = st.columns(2)
         with col_val1:
             valor_minimo = st.number_input(
@@ -365,7 +365,7 @@ def interface():
                 help="Filtrar transações acima deste valor"
             )
 # FILTRO TEMPORAL 
-        st.sidebar.subheader("Filtro Temporal")
+        st.sidebar.subheader("###Filtro Temporal")
         col_inicio, col_fim = st.sidebar.columns(2)
         with col_inicio:
             data_inicio = st.date_input("Início", value=pd.to_datetime("2023-01-01"))
